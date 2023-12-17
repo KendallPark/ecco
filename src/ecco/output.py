@@ -780,6 +780,7 @@ class NMF:
         tokens = []
 
         for idx, token in enumerate(self.tokens[input_sequence]):  # self.tokens[:-1]
+            if self.config['token_prefix'] is not None and token[0] == self.config['token_prefix']: token = token[1:]
             type = "input" if idx < self.n_input_tokens else 'output'
             tokens.append({'token': token,
                            'token_id': int(self.token_ids[input_sequence][idx]),
