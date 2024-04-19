@@ -67,9 +67,14 @@ class LM(object):
         if torch.cuda.is_available() and gpu:
             self.model = model.to('cuda')
 
-        self.device = 'cuda' if torch.cuda.is_available() \
-                                and self.model.device.type == 'cuda' \
-            else 'cpu'
+
+        if  torch.cuda.is_available() and self.model.device.type == 'cuda':
+            self.device = 'cuda'
+        elif torch.backends.mps.is_available():
+            self.device = 'mps'
+            self.model = self.model.to('mps')
+        else:
+            self.device = 'cpu'
 
         self.tokenizer = tokenizer
         self.verbose = verbose
@@ -116,6 +121,8 @@ class LM(object):
     def to(self, tensor: Union[torch.Tensor, BatchEncoding]):
         if self.device == 'cuda':
             return tensor.to('cuda')
+        elif self.device == 'mps':
+            return tensor.to('mps')
         return tensor
 
     def _analyze_token(self,
@@ -439,6 +446,8 @@ class LM(object):
 
         # Move inputs to GPU if the model is on GPU
         if self.model.device.type == "cuda" and input_tokens['input_ids'].device.type == "cpu":
+            input_tokens = self.to(input_tokens)
+        elif self.model.device.type == "mps" and input_tokens['input_ids'].device.type == "cpu":
             input_tokens = self.to(input_tokens)
 
         # Remove downstream. For now setting to batch length
