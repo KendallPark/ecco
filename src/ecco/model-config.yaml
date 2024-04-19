@@ -43,6 +43,13 @@ bert-base-uncased:
         - '\d+\.output\.dense' #To set apart from attention.output.dense
     token_prefix: ''
     partial_token_prefix: '##'
+bert-base-cased:
+    embedding: "embeddings.word_embeddings"
+    type: 'mlm'
+    activations:
+        - '\d+\.output\.dense' #To set apart from attention.output.dense
+    token_prefix: ''
+    partial_token_prefix: '##'
 bert-large-uncased:
     embedding: "embeddings.word_embeddings"
     type: 'mlm'
