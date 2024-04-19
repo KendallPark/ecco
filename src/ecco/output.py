@@ -11,6 +11,7 @@ from torch.nn import functional as F
 from sklearn import decomposition
 from typing import Dict, Optional, List, Tuple, Union
 from ecco.util import strip_tokenizer_prefix, is_partial_token
+import torchnmf.nmf as tnmf
 
 class OutputSeq:
     """An OutputSeq object is the result of running a language model on some input data. It contains not only the output
@@ -78,7 +79,7 @@ class OutputSeq:
             model_outputs: Raw return object returned by the model
             lm_head: The trained language model head from a language model projecting a
                 hidden state to an output vocabulary associated with teh tokenizer.
-            device: "cuda" or "cpu"
+            device: "cuda" or "cpu" or "mps"
             config: The configuration dict of the language model
         """
         self.token_ids = token_ids
@@ -633,6 +634,7 @@ class OutputSeq:
                    tokens=self.tokens,
                    config=self.config,
                    collect_activations_layer_nums=self.collect_activations_layer_nums,
+                   device=self.device,
                    **kwargs)
 
 class NMF:
@@ -647,6 +649,7 @@ class NMF:
                  to_layer: Optional[int] = None,
                  tokens: Optional[List[str]] = None,
                  collect_activations_layer_nums: Optional[List[int]] = None,
+                 device='cpu',
                  config=None,
                  **kwargs):
         """
@@ -696,13 +699,19 @@ class NMF:
 
         # Get rid of negative activation values
         # (There are some, because GPT2 uses GELU, which allow small negative values)
-        self.activations = np.maximum(activations, 0).T
+        self.activations = np.maximum(activations, 0)
+        torch_activations = torch.from_numpy(self.activations).float().to(device)
 
-        self.model = decomposition.NMF(n_components=n_components,
-                                  init='random',
-                                  random_state=0,
-                                  max_iter=500)
-        self.components = self.model.fit_transform(self.activations).T
+        self.model = tnmf.NMF(torch_activations.shape, rank=n_components)
+        self.model.to(device)
+        self.model.fit(torch_activations, max_iter=500, verbose=False)
+        self.components = self.model.W.T.cpu().detach().numpy()
+        self.features = self.model.H.cpu().detach().numpy()
+        # self.model = decomposition.NMF(n_components=n_components,
+        #                           init='random',
+        #                           random_state=0,
+        #                           max_iter=500)
+        # self.components = self.model.fit_transform(self.activations).T
 
 
     @staticmethod

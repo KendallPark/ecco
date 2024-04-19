@@ -64,12 +64,13 @@ class LM(object):
         """
         self.model_name = model_name
         self.model = model
-        if torch.cuda.is_available() and gpu:
-            self.model = model.to('cuda')
+        # if torch.cuda.is_available() and gpu:
+        #     self.model = model.to('cuda')
 
 
-        if  torch.cuda.is_available() and self.model.device.type == 'cuda':
+        if  torch.cuda.is_available():
             self.device = 'cuda'
+            self.model = model.to('cuda')
         elif torch.backends.mps.is_available():
             self.device = 'mps'
             self.model = self.model.to('mps')

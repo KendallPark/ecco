@@ -69,7 +69,8 @@ setup(
         "seaborn>=0.11",
         "scikit-learn>=0.23",
         "PyYAML>=6.0",
-        "captum>=0.4"
+        "captum>=0.4",
+        "torchnmf>=0.3.4",
     ],
     extras_require={
         "dev": [
